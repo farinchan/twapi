@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { registerSchema } from "@/lib/validation";
 import { User, initializeDatabase } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -29,12 +30,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buat user baru (password akan otomatis di-hash oleh hook beforeCreate)
+    // Hash password secara manual (double safety)
+    console.log('Register: Hashing password manually...');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log('Register: Password hashed successfully');
+
+    // Buat user baru dengan password yang sudah di-hash
     const newUser = await User.create({
       name,
       email,
-      password,
+      password: hashedPassword,
     });
+
+    console.log('Register: User created with ID:', newUser.id);
 
     // Return response tanpa password
     return NextResponse.json(

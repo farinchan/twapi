@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { loginSchema } from "@/lib/validation";
 import { User, initializeDatabase } from "@/lib/db";
 import { generateToken } from "@/lib/jwt";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -21,23 +22,44 @@ export async function POST(req: Request) {
 
     const { email, password } = parsed.data;
 
-    // Cari user berdasarkan email
-    const user = await User.findOne({ where: { email } });
+    console.log('Login attempt for email:', email);
+
+    // Cari user berdasarkan email - use raw: true to get plain object
+    const user = await User.findOne({ 
+      where: { email },
+      attributes: ['id', 'name', 'email', 'password', 'createdAt', 'updatedAt'],
+      raw: true, // Get plain object directly
+    });
+    
     if (!user) {
+      console.log('Login failed: User not found');
+      return NextResponse.json(
+        { message: "Email atau password salah" },
+        { status: 401 }
+      );
+    }
+    
+    console.log('User found:', user.email);
+    console.log('User ID:', user.id);
+    console.log('Password field exists:', !!user.password);
+    console.log('Password is hashed:', user.password?.startsWith('$2'));
+    console.log('Stored password length:', user.password?.length);
+
+    // Validate password using bcrypt directly
+    console.log('Comparing password with bcrypt...');
+    const isPasswordValid = await bcrypt.compare(password, user.password || '');
+    
+    console.log('Password validation result:', isPasswordValid);
+    
+    if (!isPasswordValid) {
+      console.log('Login failed: Invalid password');
       return NextResponse.json(
         { message: "Email atau password salah" },
         { status: 401 }
       );
     }
 
-    // Validasi password
-    const isPasswordValid = await user.validatePassword(password);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { message: "Email atau password salah" },
-        { status: 401 }
-      );
-    }
+    console.log('Login successful for user:', user.email);
 
     // Generate JWT token
     const token = generateToken({

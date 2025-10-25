@@ -25,10 +25,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Method untuk memvalidasi password
-  public async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
-  }
+
 }
 
 // Inisialisasi model User
@@ -63,15 +60,22 @@ User.init(
     hooks: {
       // Hash password sebelum menyimpan
       beforeCreate: async (user: User) => {
+        console.log('beforeCreate hook triggered for user:', user.email);
         if (user.password) {
+          console.log('Hashing password...');
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
+          console.log('Password hashed successfully');
+        } else {
+          console.log('No password to hash');
         }
       },
       beforeUpdate: async (user: User) => {
         if (user.changed('password')) {
+          console.log('beforeUpdate hook: Hashing password...');
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
+          console.log('Password hashed successfully');
         }
       },
     },

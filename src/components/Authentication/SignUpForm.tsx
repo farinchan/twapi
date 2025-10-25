@@ -1,10 +1,52 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema, type RegisterInput } from "@/lib/validation";
+import { useRouter } from "next/navigation";
 
 const SignUpForm: React.FC = () => {
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm<RegisterInput>({ resolver: zodResolver(registerSchema), mode: "onTouched" });
+
+  const onSubmit = async (values: RegisterInput) => {
+    setServerError(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSuccessMessage("Registrasi berhasil! Mengarahkan ke halaman login...");
+        setTimeout(() => {
+          router.push("/auth/sign-in");
+        }, 2000);
+        return;
+      }
+
+      if (res.status === 422) {
+        setServerError(data?.message ?? "Validasi gagal");
+      } else {
+        setServerError(data?.message ?? "Registrasi gagal");
+      }
+    } catch (error) {
+      setServerError("Terjadi kesalahan pada jaringan");
+    }
+  };
+
   return (
     <>
       <div className="auth-main-content bg-white dark:bg-[#0a0e19] py-[60px] md:py-[80px] lg:py-[120px] xl:py-[135px]">
@@ -44,6 +86,18 @@ const SignUpForm: React.FC = () => {
                   Sign Up with social account or enter your details
                 </p>
               </div>
+
+              {serverError && (
+                <div className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm text-red-700 dark:text-red-400">{serverError}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
+                  <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
+                </div>
+              )}
 
               <div className="flex items-center justify-between mb-[20px] md:mb-[23px] gap-[12px]">
                 <div className="grow">
@@ -92,56 +146,72 @@ const SignUpForm: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mb-[15px] relative">
-                <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
-                  placeholder="Enter your full name"
-                />
-              </div>
+              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                <div className="mb-[15px] relative">
+                  <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
+                    Full Name
+                  </label>
+                  <input
+                    {...register("name")}
+                    type="text"
+                    className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
+                    placeholder="Enter your full name"
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
 
-              <div className="mb-[15px] relative">
-                <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
-                  Email Address
-                </label>
-                <input
-                  type="text"
-                  className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
-                  placeholder="example@trezo.com"
-                />
-              </div>
+                <div className="mb-[15px] relative">
+                  <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
+                    Email Address
+                  </label>
+                  <input
+                    {...register("email")}
+                    inputMode="email"
+                    autoComplete="email"
+                    type="email"
+                    className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
+                    placeholder="example@trezo.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-              <div className="mb-[15px] relative" id="passwordHideShow">
-                <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
-                  id="password"
-                  placeholder="Type password"
-                />
+                <div className="mb-[15px] relative" id="passwordHideShow">
+                  <label className="mb-[10px] md:mb-[12px] text-black dark:text-white font-medium block">
+                    Password
+                  </label>
+                  <input
+                    {...register("password")}
+                    type="password"
+                    className="h-[55px] rounded-md text-black dark:text-white border border-gray-200 dark:border-[#172036] bg-white dark:bg-[#0c1427] px-[17px] block w-full outline-0 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-primary-500"
+                    id="password"
+                    placeholder="Type password"
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
                 <button
-                  className="absolute text-lg ltr:right-[20px] rtl:left-[20px] bottom-[12px] transition-all hover:text-primary-500"
-                  id="toggleButton"
-                  type="button"
+                  disabled={isSubmitting}
+                  type="submit"
+                  className="md:text-md block w-full text-center transition-all rounded-md font-medium my-[20px] md:my-[25px] py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <i className="ri-eye-off-line"></i>
+                  <span className="flex items-center justify-center gap-[5px]">
+                    <i className="material-symbols-outlined">person_4</i>
+                    {isSubmitting ? "Signing Up..." : "Sign Up"}
+                  </span>
                 </button>
-              </div>
-
-              <button
-                type="submit"
-                className="md:text-md block w-full text-center transition-all rounded-md font-medium my-[20px] md:my-[25px] py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400"
-              >
-                <span className="flex items-center justify-center gap-[5px]">
-                  <i className="material-symbols-outlined">person_4</i>
-                  Sign Up
-                </span>
-              </button>
+              </form>
 
               <p className="!leading-[1.6]">
                 By confirming your email, you agree to our{" "}
@@ -163,7 +233,7 @@ const SignUpForm: React.FC = () => {
               <p className="!leading-[1.6]">
                 Already have an account.{" "}
                 <Link
-                  href="/authentication/sign-in"
+                  href="/auth/sign-in"
                   className="text-primary-500 transition-all font-semibold hover:underline"
                 >
                   Sign In

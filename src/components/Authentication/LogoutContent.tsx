@@ -1,10 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const LogoutContent: React.FC = () => {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggedOut, setIsLoggedOut] = useState(false);
+
+  useEffect(() => {
+    // Auto logout when component mounts
+    const performLogout = async () => {
+      setIsLoggingOut(true);
+      try {
+        const res = await fetch("/api/auth/logout", {
+          method: "POST",
+        });
+
+        if (res.ok) {
+          setIsLoggedOut(true);
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+      } finally {
+        setIsLoggingOut(false);
+      }
+    };
+
+    performLogout();
+  }, []);
+
+  const handleSignInRedirect = () => {
+    router.push("/auth/sign-in");
+  };
+
   return (
     <>
       <div className="auth-main-content bg-white dark:bg-[#0a0e19] py-[60px] md:py-[80px] lg:py-[135px]">
@@ -38,12 +69,20 @@ const LogoutContent: React.FC = () => {
 
               <div className="my-[17px] md:my-[25px]">
                 <h1 className="!font-semibold !text-[22px] md:!text-xl lg:!text-2xl !mb-[5px] md:!mb-[10px]">
-                  Welcome back to Trezo!
+                  {isLoggingOut ? "Logging out..." : "Goodbye!"}
                 </h1>
                 <p className="font-medium leading-[1.5] lg:text-md text-[#445164] dark:text-gray-400">
-                  You Are Logged out
+                  {isLoggingOut ? "Please wait..." : isLoggedOut ? "You have been logged out successfully" : "You Are Logged out"}
                 </p>
               </div>
+
+              {isLoggedOut && (
+                <div className="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    Logout berhasil! Anda akan diarahkan ke halaman login.
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center mb-[20px]">
                 <Image
@@ -54,19 +93,20 @@ const LogoutContent: React.FC = () => {
                   height={50}
                 />
                 <span className="font-semibold text-black dark:text-white block">
-                  Olivia John
+                  Thank you for using Trezo!
                 </span>
               </div>
 
-              <Link
-                href="/authentication/sign-in"
-                className="md:text-md block w-full text-center transition-all rounded-md font-medium py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400"
+              <button
+                onClick={handleSignInRedirect}
+                disabled={isLoggingOut}
+                className="md:text-md block w-full text-center transition-all rounded-md font-medium py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="flex items-center justify-center gap-[5px]">
-                  <i className="material-symbols-outlined">autorenew</i>
-                  Sign In
+                  <i className="material-symbols-outlined">login</i>
+                  {isLoggingOut ? "Logging out..." : "Sign In Again"}
                 </span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>

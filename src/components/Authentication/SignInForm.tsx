@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,13 +8,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/lib/validation";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-
 
 const SignInForm: React.FC = () => {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/back/dashboard";
+  const next = sp?.get("next") || "/back/dashboard";
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
@@ -22,24 +20,27 @@ const SignInForm: React.FC = () => {
 
   const onSubmit = async (values: LoginInput) => {
     setServerError(null);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
 
-    if (res.ok) {
-      router.push(next);
-      return;
-    }
+      const j = await res.json().catch(() => ({}));
 
-    if (res.status === 422) {
-      // jika perlu, bisa baca fieldErrors di sini untuk setError()
-      const j = await res.json().catch(() => ({}));
-      setServerError(j?.message ?? "Validasi gagal");
-    } else {
-      const j = await res.json().catch(() => ({}));
-      setServerError(j?.message ?? "Login gagal");
+      if (res.ok) {
+        router.push(next as string);
+        return;
+      }
+
+      if (res.status === 422) {
+        setServerError(j?.message ?? "Validasi gagal");
+      } else {
+        setServerError(j?.message ?? "Login gagal");
+      }
+    } catch (err) {
+      setServerError("Terjadi kesalahan pada jaringan");
     }
   };
 
@@ -84,8 +85,8 @@ const SignInForm: React.FC = () => {
               </div>
 
               {serverError && (
-                <div className="mb-4 rounded-md bg-red-50 p-4">
-                  <p className="text-sm text-red-700">{serverError}</p>
+                <div className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm text-red-700 dark:text-red-400">{serverError}</p>
                 </div>
               )}
 
@@ -178,7 +179,7 @@ const SignInForm: React.FC = () => {
 
 
                 <Link
-                  href="/authentication/forgot-password"
+                  href="/auth/forgot-password"
                   className="inline-block text-primary-500 transition-all font-semibold hover:underline"
                 >
                   Forgot Password?
@@ -187,19 +188,19 @@ const SignInForm: React.FC = () => {
                 <button
                   disabled={isSubmitting}
                   type="submit"
-                  className="md:text-md block w-full text-center transition-all rounded-md font-medium mt-[20px] md:mt-[25px] py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400"
+                  className="md:text-md block w-full text-center transition-all rounded-md font-medium mt-[20px] md:mt-[25px] py-[12px] px-[25px] text-white bg-primary-500 hover:bg-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="flex items-center justify-center gap-[5px]">
                     <i className="material-symbols-outlined">login</i>
-                    Sign In
+                    {isSubmitting ? "Signing In..." : "Sign In"}
                   </span>
                 </button>
               </form>
 
               <p className="mt-[15px] md:mt-[20px]">
-                Don’t have an account.{" "}
+                Don't have an account.{" "}
                 <Link
-                  href="/authentication/sign-up"
+                  href="/auth/sign-up"
                   className="text-primary-500 transition-all font-semibold hover:underline"
                 >
                   Sign Up
