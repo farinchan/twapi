@@ -1,5 +1,8 @@
 import sequelize from './config';
 import User from './models/User';
+import WhatsappSession from './models/WhatsappSession';
+import WhatsappContact from './models/WhatsappContact';
+import WhatsappMessage from './models/WhatsappMessage';
 
 // Fungsi untuk menginisialisasi database
 export async function initializeDatabase() {
@@ -19,6 +22,15 @@ export async function initializeDatabase() {
   }
 }
 
+User.hasMany(WhatsappSession, { foreignKey: 'userId' });
+WhatsappSession.belongsTo(User, { foreignKey: 'userId' });
+
+WhatsappSession.hasMany(WhatsappContact, { foreignKey: 'sessionId' });
+WhatsappContact.belongsTo(WhatsappSession, { foreignKey: 'sessionId' });
+
+WhatsappContact.hasMany(WhatsappMessage, { foreignKey: 'whatsappContactId' });
+WhatsappMessage.belongsTo(WhatsappContact, { foreignKey: 'whatsappContactId' });
+
 // Export models untuk digunakan di tempat lain
-export { User };
+export { User, WhatsappSession, WhatsappContact, WhatsappMessage };
 export default sequelize;

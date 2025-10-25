@@ -39,17 +39,7 @@ export async function POST(req: Request) {
       );
     }
     
-    console.log('User found:', user.email);
-    console.log('User ID:', user.id);
-    console.log('Password field exists:', !!user.password);
-    console.log('Password is hashed:', user.password?.startsWith('$2'));
-    console.log('Stored password length:', user.password?.length);
-
-    // Validate password using bcrypt directly
-    console.log('Comparing password with bcrypt...');
     const isPasswordValid = await bcrypt.compare(password, user.password || '');
-    
-    console.log('Password validation result:', isPasswordValid);
     
     if (!isPasswordValid) {
       console.log('Login failed: Invalid password');

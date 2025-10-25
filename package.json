@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^5.2.1",
     "apexcharts": "^4.7.0",
     "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "material-symbols": "^0.31.2",
     "mysql2": "^3.15.3",
@@ -33,6 +34,7 @@
     "socket.io-client": "^4.8.1",
     "swiper": "^11.2.6",
     "tailwind-scrollbar": "^4.0.2",
+    "wa-multi-session": "^3.8.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
